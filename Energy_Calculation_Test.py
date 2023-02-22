@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import cmath
+import inspect
 
 class Energy:
 
@@ -294,72 +295,129 @@ class Energy:
 
         return F_drag
     
-    def solve_velocity_drift(self, *args, **kwargs):
+    def solve_velocity_drift(self, starting_time):
         depth = self.depth
         x = self.x
         y = self.y
+        t = starting_time
 
         velocity = []
         drift_angle = []
         speed_overground = []
         time = []
 
-        if 'starting_time' in kwargs:
-            t = kwargs['starting_time']
+        if not hasattr(Energy, 'flow_field'):
+            if not 'flow_field' in globals():
+                for i in range(len(depth)-1):
+                    power = self.P
+                    start_velocity = 0
+                    end_velocity = 10
+                    tolerance = 10 ** -3
 
-        if len(args) > 0:
-            u = args[0]
-            v = args[1]
-            for i in range(len(depth) - 1):
-                power = self.P
-                start_velocity = 0
-                end_velocity = 10
-                tolerance = 10 ** -3
+                    if i > 0: 
+                        t += ((x[i] - x[i-1]) * 1000) / (V + self.Prandle_Heaps(t, x[i], depth[i], self.T)[0])
+                    
+                    u, v = self.Prandle_Heaps(t, x[i], depth[i], self.T)[0:2]
 
-                if i > 0: 
-                    t += ((x[i] - x[i-1]) * 1000) / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
-
-                while abs(end_velocity - start_velocity) > tolerance:
-                    mid_velocity = (start_velocity + end_velocity) / 2
-                    mid_drift_angle = self.find_drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
-                    mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
-                    if mid_power > power:
-                        end_velocity = mid_velocity
-                    else:
-                        start_velocity = mid_velocity
-                V = (start_velocity + end_velocity) / 2
-                velocity.append(V)
-                drift_angle.append(self.find_drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
-                speed_overground.append(self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
-                time.append(t)
+                    while abs(end_velocity - start_velocity) > tolerance:
+                        mid_velocity = (start_velocity + end_velocity) / 2
+                        mid_drift_angle = self.find_drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
+                        mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
+                        if mid_power > power:
+                            end_velocity = mid_velocity
+                        else:
+                            start_velocity = mid_velocity
+                    
+                    V = (start_velocity + end_velocity) / 2
+                    velocity.append(V)
+                    drift_angle.append(self.find_drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
+                    speed_overground.append(V + self.Prandle_Heaps(t, x[i], depth[i], self.T)[0])
+                    time.append(t)
 
         else:
-            for i in range(len(depth)-1):
-                power = self.P
-                start_velocity = 0
-                end_velocity = 10
-                tolerance = 10 ** -3
+            flow_field_args = inspect.signature(self.flow_field).parameters
 
-                if i > 0: 
-                    t += ((x[i] - x[i-1]) * 1000) / (V + self.Prandle_Heaps(t, x[i], depth[i], self.T)[0])
-                
-                u, v = self.Prandle_Heaps(t, x[i], depth[i], self.T)[0:2]
+            if len(flow_field_args) == 0:
+                u = self.flow_field()[0]
+                v = self.flow_field()[1]
 
-                while abs(end_velocity - start_velocity) > tolerance:
-                    mid_velocity = (start_velocity + end_velocity) / 2
-                    mid_drift_angle = self.find_drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
-                    mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
-                    if mid_power > power:
-                        end_velocity = mid_velocity
-                    else:
-                        start_velocity = mid_velocity
-                
-                V = (start_velocity + end_velocity) / 2
-                velocity.append(V)
-                drift_angle.append(self.find_drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
-                speed_overground.append(V + self.Prandle_Heaps(t, x[i], depth[i], self.T)[0])
-                time.append(t)
- 
+                for i in range(len(depth) - 1):
+                    power = self.P
+                    start_velocity = 0
+                    end_velocity = 10
+                    tolerance = 10 ** -3
+
+                    if i > 0: 
+                        t += ((x[i] - x[i-1]) * 1000) / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+
+                    while abs(end_velocity - start_velocity) > tolerance:
+                        mid_velocity = (start_velocity + end_velocity) / 2
+                        mid_drift_angle = self.find_drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+                        mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
+                        if mid_power > power:
+                            end_velocity = mid_velocity
+                        else:
+                            start_velocity = mid_velocity
+                    V = (start_velocity + end_velocity) / 2
+                    velocity.append(V)
+                    drift_angle.append(self.find_drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
+                    speed_overground.append(self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
+                    time.append(t)
+
+            elif len(flow_field_args) == 1 and 'x' in flow_field_args:
+                u = self.flow_field(x)[0]
+                v = self.flow_field(x)[1]
+
+                for i in range(len(depth) - 1):
+                    power = self.P
+                    start_velocity = 0
+                    end_velocity = 10
+                    tolerance = 10 ** -3
+
+                    if i > 0: 
+                        t += ((x[i] - x[i-1]) * 1000) / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+
+                    while abs(end_velocity - start_velocity) > tolerance:
+                        mid_velocity = (start_velocity + end_velocity) / 2
+                        mid_drift_angle = self.find_drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+                        mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
+                        if mid_power > power:
+                            end_velocity = mid_velocity
+                        else:
+                            start_velocity = mid_velocity
+                    V = (start_velocity + end_velocity) / 2
+                    velocity.append(V)
+                    drift_angle.append(self.find_drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
+                    speed_overground.append(self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
+                    time.append(t)
+                    
+            elif len(flow_field_args) == 2 and 'x' in flow_field_args and 't' in flow_field_args:
+        
+                for i in range(len(depth)-1):
+                    power = self.P
+                    start_velocity = 0
+                    end_velocity = 10
+                    tolerance = 10 ** -3
+
+                    if i > 0: 
+                        t += ((x[i] - x[i-1]) * 1000) / (V + self.flow_field(t, x[i])[0])
+                    
+                    u, v = self.flow_field(t, x[i])
+
+                    while abs(end_velocity - start_velocity) > tolerance:
+                        mid_velocity = (start_velocity + end_velocity) / 2
+                        mid_drift_angle = self.find_drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
+                        mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
+                        if mid_power > power:
+                            end_velocity = mid_velocity
+                        else:
+                            start_velocity = mid_velocity
+                    V = (start_velocity + end_velocity) / 2
+                    velocity.append(V)
+                    drift_angle.append(self.find_drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
+                    speed_overground.append(V + self.flow_field(t, x[i])[0])
+                    time.append(t)
+        
         return velocity, drift_angle, speed_overground, time
 
     def Prandle_Heaps(self, t, x, D, T):
