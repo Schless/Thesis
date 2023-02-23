@@ -321,7 +321,7 @@ class Energy:
 
                     while abs(end_velocity - start_velocity) > tolerance:
                         mid_velocity = (start_velocity + end_velocity) / 2
-                        mid_drift_angle = self.find_drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
+                        mid_drift_angle = self.drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
                         mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
                         if mid_power > power:
                             end_velocity = mid_velocity
@@ -330,7 +330,7 @@ class Energy:
                     
                     V = (start_velocity + end_velocity) / 2
                     velocity.append(V)
-                    drift_angle.append(self.find_drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
+                    drift_angle.append(self.drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
                     speed_overground.append(V + self.Prandle_Heaps(t, x[i], depth[i], self.T)[0])
                     time.append(t)
 
@@ -352,7 +352,7 @@ class Energy:
 
                     while abs(end_velocity - start_velocity) > tolerance:
                         mid_velocity = (start_velocity + end_velocity) / 2
-                        mid_drift_angle = self.find_drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+                        mid_drift_angle = self.drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
                         mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
                         if mid_power > power:
                             end_velocity = mid_velocity
@@ -360,7 +360,7 @@ class Energy:
                             start_velocity = mid_velocity
                     V = (start_velocity + end_velocity) / 2
                     velocity.append(V)
-                    drift_angle.append(self.find_drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
+                    drift_angle.append(self.drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
                     speed_overground.append(self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
                     time.append(t)
 
@@ -379,7 +379,7 @@ class Energy:
 
                     while abs(end_velocity - start_velocity) > tolerance:
                         mid_velocity = (start_velocity + end_velocity) / 2
-                        mid_drift_angle = self.find_drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+                        mid_drift_angle = self.drift_angle(mid_velocity, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
                         mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
                         if mid_power > power:
                             end_velocity = mid_velocity
@@ -387,7 +387,7 @@ class Energy:
                             start_velocity = mid_velocity
                     V = (start_velocity + end_velocity) / 2
                     velocity.append(V)
-                    drift_angle.append(self.find_drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
+                    drift_angle.append(self.drift_angle(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
                     speed_overground.append(self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)]))
                     time.append(t)
                     
@@ -406,7 +406,7 @@ class Energy:
 
                     while abs(end_velocity - start_velocity) > tolerance:
                         mid_velocity = (start_velocity + end_velocity) / 2
-                        mid_drift_angle = self.find_drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
+                        mid_drift_angle = self.drift_angle(mid_velocity, u, v, x[i:(i+2)], y[i:(i+2)])
                         mid_power = (self.HM(mid_velocity, depth[i], mid_drift_angle)[0] / 1000)
                         if mid_power > power:
                             end_velocity = mid_velocity
@@ -414,7 +414,7 @@ class Energy:
                             start_velocity = mid_velocity
                     V = (start_velocity + end_velocity) / 2
                     velocity.append(V)
-                    drift_angle.append(self.find_drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
+                    drift_angle.append(self.drift_angle(V, u, v, x[i:(i+2)], y[i:(i+2)]))
                     speed_overground.append(V + self.flow_field(t, x[i])[0])
                     time.append(t)
         
@@ -514,7 +514,7 @@ class Energy:
         return u, v, u_p, u_h, v_p, v_h
 
     @staticmethod    
-    def find_drift_angle(V, u, v, x, y):
+    def drift_angle(V, u, v, x, y):
         sailing_angle = np.arctan2((y[1] - y[0]), (x[1] - x[0]))
             
         current = np.array([u, v])
