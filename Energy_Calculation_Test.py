@@ -315,7 +315,7 @@ class Energy:
                     tolerance = 10 ** -3
 
                     if i > 0: 
-                        t += ((x[i] - x[i-1]) * 1000) / (V + self.Prandle_Heaps(t, x[i], depth[i], self.T)[0])
+                        t += (np.sqrt(abs(x[i] - x[i-1])**2 + abs(y[i] - y[i-1])**2) * 1000) / self.speed_overground(V, u, v, x[i:(i+2)], y[i:(i+2)])
                     
                     u, v = self.Prandle_Heaps(t, x[i], depth[i], self.T)[0:2]
 
@@ -348,7 +348,7 @@ class Energy:
                     tolerance = 10 ** -3
 
                     if i > 0: 
-                        t += ((x[i] - x[i-1]) * 1000) / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+                        t += (np.sqrt(abs(x[i] - x[i-1])**2 + abs(y[i] - y[i-1])**2) * 1000) / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
 
                     while abs(end_velocity - start_velocity) > tolerance:
                         mid_velocity = (start_velocity + end_velocity) / 2
@@ -375,7 +375,7 @@ class Energy:
                     tolerance = 10 ** -3
 
                     if i > 0: 
-                        t += ((x[i] - x[i-1]) * 1000) / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
+                        t += (np.sqrt(abs(x[i] - x[i-1])**2 + abs(y[i] - y[i-1])**2) * 1000)  / self.speed_overground(V, u[i], v[i], x[i:(i+2)], y[i:(i+2)])
 
                     while abs(end_velocity - start_velocity) > tolerance:
                         mid_velocity = (start_velocity + end_velocity) / 2
@@ -400,7 +400,7 @@ class Energy:
                     tolerance = 10 ** -3
 
                     if i > 0: 
-                        t += ((x[i] - x[i-1]) * 1000) / (V + self.flow_field(t, x[i])[0])
+                        t += (np.sqrt(abs(x[i] - x[i-1])**2 + abs(y[i] - y[i-1])**2) * 1000)  / self.speed_overground(V, u, v, x[i:(i+2)], y[i:(i+2)])
                     
                     u, v = self.flow_field(t, x[i])
 
@@ -522,7 +522,15 @@ class Energy:
         SOG_vector = current + SOW_vector
         
         correction_angle = np.arctan2(SOG_vector[1], SOG_vector[0])
+
+        if correction_angle < 0:
+            correction_angle += 2 * np.pi
+
+        if sailing_angle < 0:
+            sailing_angle += 2 * np.pi
+
         drift_angle = abs(sailing_angle - correction_angle) * (180 / np.pi)
+        
         if drift_angle < 1e-10:
             drift_angle = 0
 
